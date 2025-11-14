@@ -1,0 +1,5 @@
+
+{
+  "name": "Modern Auth UI",
+  "description": "A web application showcasing two modern, clean, and user-friendly login/registration UI flows. One version features a traditional toggle between login and sign-up forms, while the other uses a unified 'continue with email' flow that intelligently directs the user."
+}
