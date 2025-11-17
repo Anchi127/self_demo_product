@@ -11,7 +11,7 @@ const navItems = [
   { id: 'advertising', icon: Megaphone, label: '广告与账户（暂定）' },
   { id: 'materials', icon: Palette, label: '素材与报告（暂定）' },
   { id: 'finance', icon: Wallet, label: '财务与资产（暂定）' },
-  { id: 'system', icon: Settings, label: '系统与管理（暂定）' },
+  { id: 'system', icon: Settings, label: '项目管理（暂定）' },
 ];
 
 export function SideNav({ currentPage, onNavigate }: SideNavProps) {

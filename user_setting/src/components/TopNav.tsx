@@ -15,6 +15,7 @@ interface TopNavProps {
   currentSubPage?: string;
   onNavigate?: (page: string) => void;
   onNavigateToUserInfo?: () => void;
+  onNavigateToSystemSettings?: () => void;
   onLogout?: () => void;
 }
 
@@ -23,16 +24,23 @@ const pageNames: Record<string, string> = {
   advertising: '广告与账户',
   materials: '素材与报告',
   finance: '财务与资产',
-  system: '系统与管理',
+  system: '项目管理',
   'project-settings': '项目设置',
   'user-info': '用户信息',
   'account-security': '账号安全',
+  'system-settings': '系统设置',
 };
 
-export function TopNav({ currentPage, currentSubPage, onNavigateToUserInfo, onLogout }: TopNavProps) {
+export function TopNav({ currentPage, currentSubPage, onNavigateToUserInfo, onNavigateToSystemSettings, onLogout }: TopNavProps) {
   const handleUserInfoClick = () => {
     if (onNavigateToUserInfo) {
       onNavigateToUserInfo();
+    }
+  };
+
+  const handleSystemSettingsClick = () => {
+    if (onNavigateToSystemSettings) {
+      onNavigateToSystemSettings();
     }
   };
 
@@ -94,7 +102,7 @@ export function TopNav({ currentPage, currentSubPage, onNavigateToUserInfo, onLo
               <CreditCard className="w-4 h-4 mr-2" />
               账单与支付
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSystemSettingsClick}>
               <Settings className="w-4 h-4 mr-2" />
               系统设置
             </DropdownMenuItem>

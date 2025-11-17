@@ -5,6 +5,7 @@ import { ConversationWorkspace } from './components/ConversationWorkspace';
 import { SystemManagement } from './components/SystemManagement';
 import { UserInfoPage } from './components/UserInfoPage';
 import { AccountSecurityPage } from './components/AccountSecurityPage';
+import { SystemSettingsPage } from './components/SystemSettingsPage';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
 import { Toaster } from './components/ui/sonner';
@@ -57,8 +58,8 @@ export default function App() {
   };
 
   const handleNavigateToSystemSettings = () => {
-    setCurrentPage('system');
-    setCurrentSubPage(''); // 不设置子页面，直接显示系统与管理主页面
+    setCurrentPage('system-settings');
+    setCurrentSubPage('');
   };
 
   const handleNavigateToUserInfo = () => {
@@ -91,6 +92,10 @@ export default function App() {
 
     if (currentPage === 'account-security') {
       return <AccountSecurityPage onBack={handleBackFromAccountSecurity} />;
+    }
+
+    if (currentPage === 'system-settings') {
+      return <SystemSettingsPage />;
     }
 
     if (currentPage === 'project-settings') {
@@ -142,6 +147,7 @@ export default function App() {
         currentSubPage={currentSubPage}
         onNavigate={handleNavigate}
         onNavigateToUserInfo={handleNavigateToUserInfo}
+        onNavigateToSystemSettings={handleNavigateToSystemSettings}
         onLogout={handleLogout}
       />
       
