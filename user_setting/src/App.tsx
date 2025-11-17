@@ -3,6 +3,8 @@ import { TopNav } from './components/TopNav';
 import { SideNav } from './components/SideNav';
 import { ConversationWorkspace } from './components/ConversationWorkspace';
 import { SystemManagement } from './components/SystemManagement';
+import { UserInfoPage } from './components/UserInfoPage';
+import { AccountSecurityPage } from './components/AccountSecurityPage';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
 import { Toaster } from './components/ui/sonner';
@@ -59,6 +61,21 @@ export default function App() {
     setCurrentSubPage(''); // 不设置子页面，直接显示系统与管理主页面
   };
 
+  const handleNavigateToUserInfo = () => {
+    setCurrentPage('user-info');
+    setCurrentSubPage('');
+  };
+
+  const handleNavigateToAccountSecurity = () => {
+    setCurrentPage('account-security');
+    setCurrentSubPage('');
+  };
+
+  const handleBackFromAccountSecurity = () => {
+    setCurrentPage('user-info');
+    setCurrentSubPage('');
+  };
+
   const renderContent = () => {
     if (currentPage === 'conversation') {
       return <ConversationWorkspace />;
@@ -66,6 +83,14 @@ export default function App() {
     
     if (currentPage === 'system') {
       return <SystemManagement currentSubPage={currentSubPage} onSubNavigate={handleSubNavigate} />;
+    }
+
+    if (currentPage === 'user-info') {
+      return <UserInfoPage onNavigateToAccountSecurity={handleNavigateToAccountSecurity} />;
+    }
+
+    if (currentPage === 'account-security') {
+      return <AccountSecurityPage onBack={handleBackFromAccountSecurity} />;
     }
 
     if (currentPage === 'project-settings') {
@@ -116,7 +141,7 @@ export default function App() {
         currentPage={currentPage}
         currentSubPage={currentSubPage}
         onNavigate={handleNavigate}
-        onNavigateToSystemSettings={handleNavigateToSystemSettings}
+        onNavigateToUserInfo={handleNavigateToUserInfo}
         onLogout={handleLogout}
       />
       

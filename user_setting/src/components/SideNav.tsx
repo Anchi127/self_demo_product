@@ -42,16 +42,16 @@ export function SideNav({ currentPage, onNavigate }: SideNavProps) {
 
       <div className="p-4 border-t border-border">
         <button
-          onClick={() => onNavigate('project-settings')}
+          onClick={() => onNavigate('system')}
           className={cn(
             'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left text-xs',
-            currentPage === 'project-settings'
+            currentPage === 'system'
               ? 'bg-secondary text-foreground'
               : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
           )}
         >
           <Folder className="w-4 h-4" />
-          <span>项目设置</span>
+          <span>项目管理</span>
         </button>
       </div>
     </aside>

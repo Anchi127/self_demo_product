@@ -8,12 +8,13 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { ProjectSwitcher } from './ProjectSwitcher';
 
 interface TopNavProps {
   currentPage: string;
   currentSubPage?: string;
   onNavigate?: (page: string) => void;
-  onNavigateToSystemSettings?: () => void;
+  onNavigateToUserInfo?: () => void;
   onLogout?: () => void;
 }
 
@@ -24,12 +25,14 @@ const pageNames: Record<string, string> = {
   finance: '财务与资产',
   system: '系统与管理',
   'project-settings': '项目设置',
+  'user-info': '用户信息',
+  'account-security': '账号安全',
 };
 
-export function TopNav({ currentPage, currentSubPage, onNavigateToSystemSettings, onLogout }: TopNavProps) {
-  const handleSystemSettingsClick = () => {
-    if (onNavigateToSystemSettings) {
-      onNavigateToSystemSettings();
+export function TopNav({ currentPage, currentSubPage, onNavigateToUserInfo, onLogout }: TopNavProps) {
+  const handleUserInfoClick = () => {
+    if (onNavigateToUserInfo) {
+      onNavigateToUserInfo();
     }
   };
 
@@ -55,6 +58,8 @@ export function TopNav({ currentPage, currentSubPage, onNavigateToSystemSettings
         </div>
         <span className="text-muted-foreground">/</span>
         <span className="text-foreground">{getPageTitle()}</span>
+        <span className="text-muted-foreground">/</span>
+        <ProjectSwitcher />
       </div>
 
       <div className="flex items-center gap-2">
@@ -77,7 +82,7 @@ export function TopNav({ currentPage, currentSubPage, onNavigateToSystemSettings
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleUserInfoClick}>
               <User className="w-4 h-4 mr-2" />
               用户信息
             </DropdownMenuItem>
@@ -89,7 +94,7 @@ export function TopNav({ currentPage, currentSubPage, onNavigateToSystemSettings
               <CreditCard className="w-4 h-4 mr-2" />
               账单与支付
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSystemSettingsClick}>
+            <DropdownMenuItem>
               <Settings className="w-4 h-4 mr-2" />
               系统设置
             </DropdownMenuItem>
