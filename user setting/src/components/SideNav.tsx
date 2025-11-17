@@ -1,4 +1,4 @@
-import { MessageSquare, Megaphone, Palette, Wallet, Settings } from 'lucide-react';
+import { MessageSquare, Megaphone, Palette, Wallet, Settings, Folder } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface SideNavProps {
@@ -7,11 +7,11 @@ interface SideNavProps {
 }
 
 const navItems = [
-  { id: 'conversation', icon: MessageSquare, label: '对话工作台' },
-  { id: 'advertising', icon: Megaphone, label: '广告与账户' },
-  { id: 'materials', icon: Palette, label: '素材与报告' },
-  { id: 'finance', icon: Wallet, label: '财务与资产' },
-  { id: 'system', icon: Settings, label: '系统与管理' },
+  { id: 'conversation', icon: MessageSquare, label: '对话工作台（暂定）' },
+  { id: 'advertising', icon: Megaphone, label: '广告与账户（暂定）' },
+  { id: 'materials', icon: Palette, label: '素材与报告（暂定）' },
+  { id: 'finance', icon: Wallet, label: '财务与资产（暂定）' },
+  { id: 'system', icon: Settings, label: '系统与管理（暂定）' },
 ];
 
 export function SideNav({ currentPage, onNavigate }: SideNavProps) {
@@ -40,8 +40,19 @@ export function SideNav({ currentPage, onNavigate }: SideNavProps) {
         })}
       </nav>
 
-      <div className="p-4 border-t border-border text-center text-muted-foreground text-xs">
-        © 2025 Taidong Agent
+      <div className="p-4 border-t border-border">
+        <button
+          onClick={() => onNavigate('project-settings')}
+          className={cn(
+            'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left text-xs',
+            currentPage === 'project-settings'
+              ? 'bg-secondary text-foreground'
+              : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+          )}
+        >
+          <Folder className="w-4 h-4" />
+          <span>项目设置</span>
+        </button>
       </div>
     </aside>
   );

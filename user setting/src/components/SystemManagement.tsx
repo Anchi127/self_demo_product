@@ -1,4 +1,4 @@
-import { Users, Building, UserCog, Shield, FileCheck, Gauge, Key, Wrench, Clock, ChevronRight } from 'lucide-react';
+import { Users, Building, UserCog, Shield, FileCheck, Gauge, Key, Wrench, Clock, ChevronRight, Settings } from 'lucide-react';
 import { PermissionConfig } from './PermissionConfig';
 import { cn } from '../lib/utils';
 
@@ -17,6 +17,7 @@ const subMenuItems = [
   { id: 'authorization', icon: Key, label: '授权管理' },
   { id: 'toolbox', icon: Wrench, label: '工具箱' },
   { id: 'tasks', icon: Clock, label: '任务管理' },
+  { id: 'settings', icon: Settings, label: '系统设置' },
 ];
 
 export function SystemManagement({ currentSubPage, onSubNavigate }: SystemManagementProps) {

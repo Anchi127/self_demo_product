@@ -1,4 +1,4 @@
-import { HelpCircle, User, Building2, Settings, BookOpen, LogOut } from 'lucide-react';
+import { HelpCircle, User, Building2, CreditCard, Settings, BookOpen, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -11,6 +11,10 @@ import { Avatar, AvatarFallback } from './ui/avatar';
 
 interface TopNavProps {
   currentPage: string;
+  currentSubPage?: string;
+  onNavigate?: (page: string) => void;
+  onNavigateToSystemSettings?: () => void;
+  onLogout?: () => void;
 }
 
 const pageNames: Record<string, string> = {
@@ -19,9 +23,27 @@ const pageNames: Record<string, string> = {
   materials: '素材与报告',
   finance: '财务与资产',
   system: '系统与管理',
+  'project-settings': '项目设置',
 };
 
-export function TopNav({ currentPage }: TopNavProps) {
+export function TopNav({ currentPage, currentSubPage, onNavigateToSystemSettings, onLogout }: TopNavProps) {
+  const handleSystemSettingsClick = () => {
+    if (onNavigateToSystemSettings) {
+      onNavigateToSystemSettings();
+    }
+  };
+
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
+    }
+  };
+
+  // 根据当前页面显示正确的标题
+  const getPageTitle = () => {
+    return pageNames[currentPage] || '未知页面';
+  };
+
   return (
     <header className="h-14 bg-card border-b border-border flex items-center justify-between px-6 shrink-0">
       <div className="flex items-center gap-6">
@@ -32,7 +54,7 @@ export function TopNav({ currentPage }: TopNavProps) {
           <span className="text-foreground">Taidong Agent</span>
         </div>
         <span className="text-muted-foreground">/</span>
-        <span className="text-foreground">{pageNames[currentPage] || '未知页面'}</span>
+        <span className="text-foreground">{getPageTitle()}</span>
       </div>
 
       <div className="flex items-center gap-2">
@@ -64,6 +86,10 @@ export function TopNav({ currentPage }: TopNavProps) {
               企业认证
             </DropdownMenuItem>
             <DropdownMenuItem>
+              <CreditCard className="w-4 h-4 mr-2" />
+              账单与支付
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSystemSettingsClick}>
               <Settings className="w-4 h-4 mr-2" />
               系统设置
             </DropdownMenuItem>
@@ -73,7 +99,7 @@ export function TopNav({ currentPage }: TopNavProps) {
               使用指南
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-2" />
               登出
             </DropdownMenuItem>
