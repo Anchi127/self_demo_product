@@ -146,6 +146,7 @@ export default function App() {
         currentPage={currentPage}
         currentSubPage={currentSubPage}
         onNavigate={handleNavigate}
+        onSubNavigate={handleSubNavigate}
         onNavigateToUserInfo={handleNavigateToUserInfo}
         onNavigateToSystemSettings={handleNavigateToSystemSettings}
         onLogout={handleLogout}

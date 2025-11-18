@@ -14,6 +14,7 @@ interface TopNavProps {
   currentPage: string;
   currentSubPage?: string;
   onNavigate?: (page: string) => void;
+  onSubNavigate?: (subPage: string) => void;
   onNavigateToUserInfo?: () => void;
   onNavigateToSystemSettings?: () => void;
   onLogout?: () => void;
@@ -31,7 +32,7 @@ const pageNames: Record<string, string> = {
   'system-settings': '系统设置',
 };
 
-export function TopNav({ currentPage, currentSubPage, onNavigateToUserInfo, onNavigateToSystemSettings, onLogout }: TopNavProps) {
+export function TopNav({ currentPage, currentSubPage, onNavigate, onSubNavigate, onNavigateToUserInfo, onNavigateToSystemSettings, onLogout }: TopNavProps) {
   const handleUserInfoClick = () => {
     if (onNavigateToUserInfo) {
       onNavigateToUserInfo();
@@ -41,6 +42,15 @@ export function TopNav({ currentPage, currentSubPage, onNavigateToUserInfo, onNa
   const handleSystemSettingsClick = () => {
     if (onNavigateToSystemSettings) {
       onNavigateToSystemSettings();
+    }
+  };
+
+  const handleEnterpriseCertificationClick = () => {
+    if (onNavigate) {
+      onNavigate('system');
+    }
+    if (onSubNavigate) {
+      onSubNavigate('enterprise');
     }
   };
 
@@ -94,7 +104,7 @@ export function TopNav({ currentPage, currentSubPage, onNavigateToUserInfo, onNa
               <User className="w-4 h-4 mr-2" />
               用户信息
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleEnterpriseCertificationClick}>
               <Building2 className="w-4 h-4 mr-2" />
               企业认证
             </DropdownMenuItem>

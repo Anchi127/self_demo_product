@@ -1,5 +1,6 @@
 import { Users, Building, UserCog, Shield, FileCheck, Gauge, Key, Wrench, Clock, Settings } from 'lucide-react';
 import { PermissionConfig } from './PermissionConfig';
+import { EnterpriseCertificationPage } from './EnterpriseCertificationPage';
 import { cn } from '../lib/utils';
 
 interface SystemManagementProps {
@@ -69,6 +70,24 @@ export function SystemManagement({ currentSubPage, onSubNavigate }: SystemManage
         </div>
         <div className="flex-1 overflow-auto">
           <PermissionConfig onBack={() => onSubNavigate('')} />
+        </div>
+      </div>
+    );
+  }
+
+  // 企业认证页面特殊处理
+  if (currentSubPage === 'enterprise') {
+    return (
+      <div className="h-full flex flex-col bg-background">
+        <div className="p-8 pb-0">
+          <div className="mb-6">
+            <h2 className="text-foreground mb-2">项目管理</h2>
+            <p className="text-muted-foreground">配置中心 - 管理用户、权限、资产和系统工具</p>
+          </div>
+          <TabNavigation />
+        </div>
+        <div className="flex-1 overflow-auto">
+          <EnterpriseCertificationPage />
         </div>
       </div>
     );
