@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { UserPlus, Edit, Trash2, Crown } from 'lucide-react';
+import { UserPlus, Edit, Trash2, Crown, Info } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -10,25 +10,81 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './ui/tooltip';
 import { InviteMemberDialog } from './InviteMemberDialog';
 import { EditMemberDialog } from './EditMemberDialog';
 import { TransferOwnerDialog } from './TransferOwnerDialog';
 import { RemoveMemberDialog } from './RemoveMemberDialog';
+import { PendingInvitationsList, PendingInvitation } from './PendingInvitationsList';
+import { canInviteMember, canEditMember, canRemoveMember, canTransferOwner, getRoleDisplayName, type UserRole } from '../lib/permissionUtils';
 
 interface Member {
   id: string;
   name: string;
   email: string;
+  identifier: string; // 手机号或邮箱
   role: 'Owner' | 'Admin' | 'Finance' | 'Member';
   accountCount: number | string;
+  joinedAt: string; // 加入时间
+  assets?: string[]; // 已分配的资产ID列表
+  autoGrantSelfCreatedAccounts?: boolean; // 是否自动拥有自己申请开户的账户权限
 }
 
 const initialMembers: Member[] = [
-  { id: '1', name: '王一', email: 'w1@xx.com', role: 'Owner', accountCount: '全部账户' },
-  { id: '2', name: '李二', email: 'l2@xx.com', role: 'Admin', accountCount: 2 },
-  { id: '3', name: '张三', email: 'z3@xx.com', role: 'Member', accountCount: 1 },
-  { id: '4', name: '赵四', email: 'z4@xx.com', role: 'Finance', accountCount: 0 },
+  { 
+    id: '1', 
+    name: '王一', 
+    email: 'w1@xx.com', 
+    identifier: 'w1@xx.com',
+    role: 'Owner', 
+    accountCount: '全部账户',
+    joinedAt: '2024-01-15T10:00:00Z',
+    assets: [],
+    autoGrantSelfCreatedAccounts: false
+  },
+  { 
+    id: '2', 
+    name: '李二', 
+    email: 'l2@xx.com', 
+    identifier: 'l2@xx.com',
+    role: 'Admin', 
+    accountCount: 2,
+    joinedAt: '2024-02-20T14:30:00Z',
+    assets: ['1', '2'],
+    autoGrantSelfCreatedAccounts: true
+  },
+  { 
+    id: '3', 
+    name: '张三', 
+    email: 'z3@xx.com', 
+    identifier: 'z3@xx.com',
+    role: 'Member', 
+    accountCount: 1,
+    joinedAt: '2024-03-10T09:15:00Z',
+    assets: ['1'],
+    autoGrantSelfCreatedAccounts: false
+  },
+  { 
+    id: '4', 
+    name: '赵四', 
+    email: 'z4@xx.com', 
+    identifier: 'z4@xx.com',
+    role: 'Finance', 
+    accountCount: 0,
+    joinedAt: '2024-03-25T16:45:00Z',
+    assets: [],
+    autoGrantSelfCreatedAccounts: false
+  },
 ];
+
+// 模拟当前用户角色（实际应该从上下文或状态管理中获取）
+const CURRENT_USER_ROLE: UserRole = 'Owner'; // 可以改为 'Admin' 测试不同权限
 
 const roleColors: Record<string, string> = {
   Owner: 'bg-purple-50 text-purple-700 border-purple-200',
@@ -43,23 +99,64 @@ export function MemberManagement() {
   const [editMember, setEditMember] = useState<Member | null>(null);
   const [transferOwnerOpen, setTransferOwnerOpen] = useState(false);
   const [removeMember, setRemoveMember] = useState<Member | null>(null);
+  const [activeTab, setActiveTab] = useState('members');
+  
+  // 模拟待接受邀请列表
+  const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([
+    {
+      id: 'inv1',
+      invitedIdentifier: '13900001111',
+      inviterName: '王一',
+      invitedRole: 'Admin',
+      invitedAt: '2024-11-20T10:00:00Z',
+      expiresAt: '2024-11-27T10:00:00Z',
+      status: 'pending',
+      token: 'abc123token'
+    },
+    {
+      id: 'inv2',
+      invitedIdentifier: 'test@example.com',
+      inviterName: '李二',
+      invitedRole: 'Member',
+      invitedAt: '2024-11-15T14:00:00Z',
+      expiresAt: '2024-11-22T14:00:00Z',
+      status: 'expired',
+      token: 'xyz789token'
+    }
+  ]);
 
   const handleInvite = (data: any) => {
-    const newMember: Member = {
-      id: String(Date.now()),
-      name: data.email.split('@')[0],
-      email: data.email,
-      role: data.role,
-      accountCount: data.role === 'Finance' ? 0 : data.accounts.length,
-    };
-    setMembers([...members, newMember]);
+    // 这里应该创建邀请记录，而不是直接添加成员
+    // 实际实现中，邀请成功后应该添加到待接受邀请列表
+    console.log('邀请数据:', data);
+    // 模拟：如果直接接受邀请，则添加到成员列表
+    if (data.autoAccept) {
+      const newMember: Member = {
+        id: String(Date.now()),
+        name: data.name || data.identifier.split('@')[0] || data.identifier,
+        email: data.identifier.includes('@') ? data.identifier : '',
+        identifier: data.identifier,
+        role: data.role,
+        accountCount: data.role === 'Finance' ? 0 : (data.accounts?.length || 0),
+        joinedAt: new Date().toISOString(),
+        assets: data.accounts || [],
+        autoGrantSelfCreatedAccounts: data.autoGrantSelfCreatedAccounts ?? false
+      };
+      setMembers([...members, newMember]);
+    }
   };
 
   const handleEdit = (data: any) => {
     if (editMember) {
       setMembers(members.map(m => 
         m.id === editMember.id 
-          ? { ...m, role: data.role, accountCount: data.role === 'Finance' ? 0 : data.accounts.length }
+          ? { 
+              ...m, 
+              role: data.role, 
+              accountCount: data.role === 'Finance' ? 0 : (data.accounts?.length || 0),
+              assets: data.accounts || [],
+              autoGrantSelfCreatedAccounts: data.autoGrantSelfCreatedAccounts ?? false
+            }
           : m
       ));
     }
@@ -79,89 +176,172 @@ export function MemberManagement() {
     }
   };
 
+  const handleRevokeInvitation = (invitationId: string) => {
+    setPendingInvitations(prev => 
+      prev.map(inv => 
+        inv.id === invitationId 
+          ? { ...inv, status: 'revoked' as const }
+          : inv
+      )
+    );
+  };
+
+  const handleResendInvitation = (invitationId: string) => {
+    setPendingInvitations(prev => 
+      prev.map(inv => {
+        if (inv.id === invitationId) {
+          // 生成新的 token 和过期时间
+          const newToken = `new_${Date.now()}_token`;
+          const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+          return {
+            ...inv,
+            token: newToken,
+            expiresAt: newExpiresAt,
+            status: 'pending' as const
+          };
+        }
+        return inv;
+      })
+    );
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-foreground mb-1">广告主成员管理</h3>
-          <p className="text-muted-foreground text-sm">Adv: A001</p>
+          <p className="text-muted-foreground text-sm">项目名称：BPMSTEST</p>
         </div>
-        <Button onClick={() => setInviteOpen(true)} className="h-9">
-          <UserPlus className="w-4 h-4 mr-2" />
-          邀请成员
-        </Button>
+        {canInviteMember(CURRENT_USER_ROLE) && (
+          <Button onClick={() => setInviteOpen(true)} className="h-9">
+            <UserPlus className="w-4 h-4 mr-2" />
+            邀请成员
+          </Button>
+        )}
       </div>
 
-      <div className="border border-border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead>用户名</TableHead>
-              <TableHead>邮箱</TableHead>
-              <TableHead>角色</TableHead>
-              <TableHead>账户数</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members.map((member) => (
-              <TableRow key={member.id}>
-                <TableCell className="text-foreground">{member.name}</TableCell>
-                <TableCell className="text-muted-foreground">{member.email}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={roleColors[member.role]}>
-                    {member.role}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{member.accountCount}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    {member.role === 'Owner' ? (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditMember(member)}
-                          className="h-8"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setTransferOwnerOpen(true)}
-                          className="h-8"
-                        >
-                          <Crown className="w-4 h-4" />
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditMember(member)}
-                          className="h-8"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setRemoveMember(member)}
-                          className="h-8 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="members">成员列表</TabsTrigger>
+          <TabsTrigger value="pending">待接受邀请</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="members">
+          <div className="border border-border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead>用户名</TableHead>
+                  <TableHead>账号</TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-2">
+                      <span>角色</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-sm">
+                            <div className="space-y-2">
+                              <p className="font-medium mb-2">角色定义说明</p>
+                              <div className="space-y-1.5 text-sm">
+                                <div>
+                                  <span className="font-medium">项目负责人：</span>
+                                  <span className="text-muted-foreground">项目最高权限。可邀请成员、分配角色、分配广告账户、发起充值与管理钱包、支持转移负责人。</span>
+                                </div>
+                                <div>
+                                  <span className="font-medium">管理员：</span>
+                                  <span className="text-muted-foreground">管理者。可邀请成员、分配账户权限、发起充值与管理钱包。</span>
+                                </div>
+                                <div>
+                                  <span className="font-medium">财务：</span>
+                                  <span className="text-muted-foreground">财务角色。仅处理钱包、账务、对账相关功能。</span>
+                                </div>
+                                <div>
+                                  <span className="font-medium">成员：</span>
+                                  <span className="text-muted-foreground">普通成员。仅能操作被分配的广告账户，不可访问钱包、不可邀请他人。</span>
+                                </div>
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </TableHead>
+                  <TableHead>账户数</TableHead>
+                  <TableHead>加入时间</TableHead>
+                  <TableHead className="text-right">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {members.map((member) => {
+                  const canEdit = canEditMember(CURRENT_USER_ROLE, member.role);
+                  const canRemove = canRemoveMember(CURRENT_USER_ROLE, member.role);
+                  const canTransfer = canTransferOwner(CURRENT_USER_ROLE) && member.role === 'Owner';
+
+                  return (
+                    <TableRow key={member.id}>
+                      <TableCell className="text-foreground">{member.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{member.identifier}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={roleColors[member.role]}>
+                          {getRoleDisplayName(member.role)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{member.accountCount}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(member.joinedAt).toLocaleDateString('zh-CN')}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {canEdit && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditMember(member)}
+                              className="h-8"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {canTransfer && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setTransferOwnerOpen(true)}
+                              className="h-8"
+                            >
+                              <Crown className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {canRemove && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setRemoveMember(member)}
+                              className="h-8 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="pending">
+          <PendingInvitationsList
+            invitations={pendingInvitations}
+            onRevoke={handleRevokeInvitation}
+            onResend={handleResendInvitation}
+          />
+        </TabsContent>
+      </Tabs>
 
       <InviteMemberDialog
         open={inviteOpen}
@@ -174,6 +354,7 @@ export function MemberManagement() {
         onOpenChange={(open) => !open && setEditMember(null)}
         member={editMember}
         onEdit={handleEdit}
+        currentUserRole={CURRENT_USER_ROLE}
       />
 
       <TransferOwnerDialog
@@ -188,6 +369,7 @@ export function MemberManagement() {
         onOpenChange={(open) => !open && setRemoveMember(null)}
         member={removeMember}
         onRemove={handleRemove}
+        currentUserRole={CURRENT_USER_ROLE}
       />
     </div>
   );

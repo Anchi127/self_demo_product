@@ -10,9 +10,10 @@ import { Input } from './ui/input';
 interface LoginPageProps {
   onLoginSuccess: () => void;
   onNavigateToRegister: () => void;
+  onNavigateToForgotPassword: () => void;
 }
 
-export function LoginPage({ onLoginSuccess, onNavigateToRegister }: LoginPageProps) {
+export function LoginPage({ onLoginSuccess, onNavigateToRegister, onNavigateToForgotPassword }: LoginPageProps) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -170,7 +171,7 @@ export function LoginPage({ onLoginSuccess, onNavigateToRegister }: LoginPagePro
           <div className="flex items-center justify-end text-sm">
             <button
               type="button"
-              onClick={() => alert('忘记密码功能')}
+              onClick={onNavigateToForgotPassword}
               className="text-primary hover:text-primary/80 hover:underline transition-colors"
             >
               忘记密码？

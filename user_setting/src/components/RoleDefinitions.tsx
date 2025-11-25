@@ -1,9 +1,20 @@
 import { Badge } from './ui/badge';
 import { Crown, Shield, Wallet as WalletIcon, User } from 'lucide-react';
+import { getRoleDisplayName, type UserRole } from '../lib/permissionUtils';
 
-const roles = [
+const roles: Array<{
+  name: UserRole;
+  displayName: string;
+  icon: typeof Crown;
+  priority: string;
+  color: string;
+  iconColor: string;
+  badgeColor: string;
+  description: string;
+}> = [
   {
     name: 'Owner',
+    displayName: '项目负责人',
     icon: Crown,
     priority: '最高',
     color: 'bg-purple-50 text-purple-900 border-purple-200',
@@ -13,6 +24,7 @@ const roles = [
   },
   {
     name: 'Admin',
+    displayName: '管理员',
     icon: Shield,
     priority: '高',
     color: 'bg-blue-50 text-blue-900 border-blue-200',
@@ -22,6 +34,7 @@ const roles = [
   },
   {
     name: 'Finance',
+    displayName: '财务',
     icon: WalletIcon,
     priority: '中',
     color: 'bg-emerald-50 text-emerald-900 border-emerald-200',
@@ -31,6 +44,7 @@ const roles = [
   },
   {
     name: 'Member',
+    displayName: '成员',
     icon: User,
     priority: '低',
     color: 'bg-slate-50 text-slate-900 border-slate-200',
@@ -43,7 +57,7 @@ const roles = [
 export function RoleDefinitions() {
   return (
     <div className="bg-card rounded-xl border border-border p-6">
-      <h3 className="text-foreground mb-5">Adv 层角色定义</h3>
+      <h3 className="text-foreground mb-5">角色定义说明</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {roles.map((role) => {
           const Icon = role.icon;
@@ -58,10 +72,7 @@ export function RoleDefinitions() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span>{role.name}</span>
-                    <Badge variant="secondary" className={`text-xs ${role.badgeColor}`}>
-                      优先级：{role.priority}
-                    </Badge>
+                    <span className="font-medium">{role.displayName}</span>
                   </div>
                   <p className="text-sm opacity-90">{role.description}</p>
                 </div>

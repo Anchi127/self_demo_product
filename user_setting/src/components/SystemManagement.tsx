@@ -1,6 +1,7 @@
-import { Users, Building, UserCog, Shield, FileCheck, Gauge, Key, Wrench, Clock, Settings } from 'lucide-react';
+import { Shield, FileCheck, Key, Wrench, Clock, Settings } from 'lucide-react';
 import { PermissionConfig } from './PermissionConfig';
 import { EnterpriseCertificationPage } from './EnterpriseCertificationPage';
+import { SystemSettingsPage } from './SystemSettingsPage';
 import { cn } from '../lib/utils';
 
 interface SystemManagementProps {
@@ -9,16 +10,12 @@ interface SystemManagementProps {
 }
 
 const subMenuItems = [
-  { id: 'users', icon: Users, label: '用户管理' },
-  { id: 'departments', icon: Building, label: '部门管理' },
-  { id: 'roles', icon: UserCog, label: '角色管理' },
-  { id: 'permissions', icon: Shield, label: '权限配置' },
+  { id: 'permissions', icon: Shield, label: '成员与权限' },
   { id: 'enterprise', icon: FileCheck, label: '企业认证' },
-  { id: 'pixel', icon: Gauge, label: '像素管理' },
+  { id: 'settings', icon: Settings, label: '系统设置' },
   { id: 'authorization', icon: Key, label: '授权管理' },
   { id: 'toolbox', icon: Wrench, label: '工具箱' },
   { id: 'tasks', icon: Clock, label: '任务管理' },
-  { id: 'settings', icon: Settings, label: '系统设置' },
 ];
 
 export function SystemManagement({ currentSubPage, onSubNavigate }: SystemManagementProps) {
@@ -57,14 +54,14 @@ export function SystemManagement({ currentSubPage, onSubNavigate }: SystemManage
     );
   };
 
-  // 权限配置页面特殊处理
+  // 成员与权限页面特殊处理
   if (currentSubPage === 'permissions') {
     return (
       <div className="h-full flex flex-col bg-background">
         <div className="p-8 pb-0">
           <div className="mb-6">
-            <h2 className="text-foreground mb-2">项目管理</h2>
-            <p className="text-muted-foreground">配置中心 - 管理用户、权限、资产和系统工具</p>
+            <h2 className="text-foreground mb-2">设置</h2>
+            <p className="text-muted-foreground">管理项目成员、权限配置和系统设置</p>
           </div>
           <TabNavigation />
         </div>
@@ -81,13 +78,31 @@ export function SystemManagement({ currentSubPage, onSubNavigate }: SystemManage
       <div className="h-full flex flex-col bg-background">
         <div className="p-8 pb-0">
           <div className="mb-6">
-            <h2 className="text-foreground mb-2">项目管理</h2>
-            <p className="text-muted-foreground">配置中心 - 管理用户、权限、资产和系统工具</p>
+            <h2 className="text-foreground mb-2">设置</h2>
+            <p className="text-muted-foreground">管理项目成员、权限配置和系统设置</p>
           </div>
           <TabNavigation />
         </div>
         <div className="flex-1 overflow-auto">
           <EnterpriseCertificationPage />
+        </div>
+      </div>
+    );
+  }
+
+  // 系统设置页面特殊处理
+  if (currentSubPage === 'settings') {
+    return (
+      <div className="h-full flex flex-col bg-background">
+        <div className="p-8 pb-0">
+          <div className="mb-6">
+            <h2 className="text-foreground mb-2">设置</h2>
+            <p className="text-muted-foreground">管理项目成员、权限配置和系统设置</p>
+          </div>
+          <TabNavigation />
+        </div>
+        <div className="flex-1 overflow-auto">
+          <SystemSettingsPage />
         </div>
       </div>
     );
@@ -100,8 +115,8 @@ export function SystemManagement({ currentSubPage, onSubNavigate }: SystemManage
     <div className="h-full flex flex-col bg-background">
       <div className="p-8 pb-0">
         <div className="mb-6">
-          <h2 className="text-foreground mb-2">项目管理</h2>
-          <p className="text-muted-foreground">配置中心 - 管理用户、权限、资产和系统工具</p>
+          <h2 className="text-foreground mb-2">设置</h2>
+          <p className="text-muted-foreground">管理项目成员、权限配置和系统设置</p>
         </div>
         <TabNavigation />
       </div>
@@ -109,7 +124,8 @@ export function SystemManagement({ currentSubPage, onSubNavigate }: SystemManage
       {/* 内容区域 */}
       <div className="flex-1 overflow-auto p-8">
         <div className="bg-card rounded-xl border border-border p-12 text-center text-muted-foreground">
-          功能开发中
+          <p className="mb-2">功能开发中</p>
+          <p className="text-sm">此功能将在未来版本中推出</p>
         </div>
       </div>
     </div>

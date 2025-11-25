@@ -19,6 +19,7 @@ import {
 } from './ui/select';
 import { AlertTriangle, Crown } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
+import { getRoleDisplayName, type UserRole } from '../lib/permissionUtils';
 
 interface TransferOwnerDialogProps {
   open: boolean;
@@ -35,7 +36,7 @@ export function TransferOwnerDialog({ open, onOpenChange, members, onTransfer }:
 
   const handleNext = () => {
     if (!selectedMember) {
-      toast.error('请选择新的 Owner');
+      toast.error('请选择新的项目负责人');
       return;
     }
     setStep(2);
@@ -89,7 +90,7 @@ export function TransferOwnerDialog({ open, onOpenChange, members, onTransfer }:
             转移所有权
           </DialogTitle>
           <DialogDescription>
-            将 Owner 权限转移给其他成员，此操作不可撤销
+            将项目负责人权限转移给其他成员，此操作不可撤销
           </DialogDescription>
         </DialogHeader>
 
@@ -102,15 +103,15 @@ export function TransferOwnerDialog({ open, onOpenChange, members, onTransfer }:
                   转移所有权后：
                 </p>
                 <ul className="text-amber-800 space-y-1 ml-4 list-disc text-sm">
-                  <li>您的角色将自动降为 Admin</li>
-                  <li>新 Owner 将拥有最高权限</li>
+                  <li>您的角色将自动降为管理员</li>
+                  <li>新项目负责人将拥有最高权限</li>
                   <li>此操作无法撤销</li>
                 </ul>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="newOwner">选择新的 Owner</Label>
+              <Label htmlFor="newOwner">选择新的项目负责人</Label>
               <Select value={selectedMember} onValueChange={setSelectedMember}>
                 <SelectTrigger id="newOwner">
                   <SelectValue placeholder="请选择成员" />
@@ -118,7 +119,7 @@ export function TransferOwnerDialog({ open, onOpenChange, members, onTransfer }:
                 <SelectContent>
                   {members.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
-                      {member.name} ({member.email}) - {member.role}
+                      {member.name} ({member.email}) - {getRoleDisplayName(member.role as UserRole)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -134,7 +135,7 @@ export function TransferOwnerDialog({ open, onOpenChange, members, onTransfer }:
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">账户密码</Label>
+              <Label htmlFor="password">账号密码</Label>
               <Input
                 id="password"
                 type="password"
