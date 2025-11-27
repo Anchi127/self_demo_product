@@ -1,13 +1,12 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "user_setting/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
+    "builds": [
+      {
+        "src": "user_setting/package.json",
+        "use": "@vercel/static-build",
+        "config": { "distDir": "user_setting/dist" }
       }
-    }
-  ]
-}
-
+    ],
+    "rewrites": [
+      { "source": "/:path*", "destination": "/user_setting/dist/index.html" }
+    ]
+  }
