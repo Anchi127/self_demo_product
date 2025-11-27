@@ -1,5 +1,4 @@
-
-  {
+{
       "name": "Pulsing Glowing Button",
       "version": "0.1.0",
       "private": true,
@@ -55,11 +54,8 @@
       "scripts": {
           "dev": "vite",
           "build": "vite build"
+      },
+      "engines": {
+        "node": "18.x"
       }
   }
-  {
-    "engines": {
-      "node": "18.x"
-    }
-  }
-  
