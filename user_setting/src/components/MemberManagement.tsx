@@ -22,7 +22,15 @@ import { EditMemberDialog } from './EditMemberDialog';
 import { TransferOwnerDialog } from './TransferOwnerDialog';
 import { RemoveMemberDialog } from './RemoveMemberDialog';
 import { PendingInvitationsList, PendingInvitation } from './PendingInvitationsList';
+import { EditInvitationDialog } from './EditInvitationDialog';
 import { canInviteMember, canEditMember, canRemoveMember, canTransferOwner, getRoleDisplayName, type UserRole } from '../lib/permissionUtils';
+
+const mockAccounts = [
+  { id: '1', name: '广告账户 A - Facebook' },
+  { id: '2', name: '广告账户 B - Google Ads' },
+  { id: '3', name: '广告账户 C - TikTok' },
+  { id: '4', name: '广告账户 D - Twitter' },
+];
 
 interface Member {
   id: string;
@@ -100,6 +108,7 @@ export function MemberManagement() {
   const [transferOwnerOpen, setTransferOwnerOpen] = useState(false);
   const [removeMember, setRemoveMember] = useState<Member | null>(null);
   const [activeTab, setActiveTab] = useState('members');
+  const [editInvitation, setEditInvitation] = useState<PendingInvitation | null>(null);
   
   // 模拟待接受邀请列表
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([
@@ -122,28 +131,40 @@ export function MemberManagement() {
       expiresAt: '2024-11-22T14:00:00Z',
       status: 'expired',
       token: 'xyz789token'
+    },
+    {
+      id: 'inv3',
+      invitedIdentifier: 'invalid-email@wrong',
+      inviterName: '当前用户',
+      invitedRole: 'Member',
+      invitedAt: '2024-11-28T10:00:00Z',
+      expiresAt: '2024-12-05T10:00:00Z',
+      status: 'failed',
+      token: 'failed123token',
+      errorReason: '邮箱错误',
+      accounts: ['1', '2'],
+      allocationMode: 'partial',
+      autoGrantSelfCreatedAccounts: false
     }
   ]);
 
   const handleInvite = (data: any) => {
-    // 这里应该创建邀请记录，而不是直接添加成员
-    // 实际实现中，邀请成功后应该添加到待接受邀请列表
-    console.log('邀请数据:', data);
-    // 模拟：如果直接接受邀请，则添加到成员列表
-    if (data.autoAccept) {
-      const newMember: Member = {
-        id: String(Date.now()),
-        name: data.name || data.identifier.split('@')[0] || data.identifier,
-        email: data.identifier.includes('@') ? data.identifier : '',
-        identifier: data.identifier,
-        role: data.role,
-        accountCount: data.role === 'Finance' ? 0 : (data.accounts?.length || 0),
-        joinedAt: new Date().toISOString(),
-        assets: data.accounts || [],
-        autoGrantSelfCreatedAccounts: data.autoGrantSelfCreatedAccounts ?? false
-      };
-      setMembers([...members, newMember]);
-    }
+    // 创建邀请记录并添加到待接受邀请列表
+    const currentUserName = '当前用户'; // 实际应该从用户上下文获取
+    const now = new Date().toISOString();
+    
+    const newInvitations: PendingInvitation[] = data.invitations.map((invite: any) => ({
+      id: `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      invitedIdentifier: invite.identifier,
+      inviterName: currentUserName,
+      invitedRole: invite.role as 'Admin' | 'Finance' | 'Member',
+      invitedAt: now,
+      expiresAt: invite.expiresAt,
+      status: 'pending' as const,
+      token: invite.token
+    }));
+
+    setPendingInvitations(prev => [...prev, ...newInvitations]);
   };
 
   const handleEdit = (data: any) => {
@@ -176,33 +197,66 @@ export function MemberManagement() {
     }
   };
 
-  const handleRevokeInvitation = (invitationId: string) => {
+  const handleRevokeInvitation = (invitationId: string | string[]) => {
+    const ids = Array.isArray(invitationId) ? invitationId : [invitationId];
     setPendingInvitations(prev => 
       prev.map(inv => 
-        inv.id === invitationId 
+        ids.includes(inv.id)
           ? { ...inv, status: 'revoked' as const }
           : inv
       )
     );
   };
 
-  const handleResendInvitation = (invitationId: string) => {
+  const handleResendInvitation = (invitationId: string | string[]) => {
+    const ids = Array.isArray(invitationId) ? invitationId : [invitationId];
     setPendingInvitations(prev => 
       prev.map(inv => {
-        if (inv.id === invitationId) {
+        if (ids.includes(inv.id)) {
           // 生成新的 token 和过期时间
-          const newToken = `new_${Date.now()}_token`;
+          const newToken = `new_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
           const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
           return {
             ...inv,
             token: newToken,
             expiresAt: newExpiresAt,
-            status: 'pending' as const
+            status: 'pending' as const,
+            errorReason: undefined
           };
         }
         return inv;
       })
     );
+  };
+
+  const handleEditInvitation = (invitation: PendingInvitation) => {
+    setEditInvitation(invitation);
+  };
+
+  const handleUpdateInvitation = (data: any) => {
+    if (!editInvitation) return;
+
+    setPendingInvitations(prev => 
+      prev.map(inv => {
+        if (inv.id === editInvitation.id) {
+          return {
+            ...inv,
+            invitedIdentifier: data.identifier,
+            invitedRole: data.role as 'Admin' | 'Finance' | 'Member',
+            token: data.token,
+            expiresAt: data.expiresAt,
+            status: 'pending' as const,
+            errorReason: undefined,
+            accounts: data.accounts,
+            allocationMode: data.allocationMode,
+            autoGrantSelfCreatedAccounts: data.autoGrantSelfCreatedAccounts
+          };
+        }
+        return inv;
+      })
+    );
+
+    setEditInvitation(null);
   };
 
   return (
@@ -255,7 +309,7 @@ export function MemberManagement() {
                                 </div>
                                 <div>
                                   <span className="font-medium">财务：</span>
-                                  <span className="text-muted-foreground">财务角色。仅处理钱包、账务、对账相关功能。</span>
+                                  <span className="text-muted-foreground">财务角色。拥有除邀请成员、分配账户权限外的全部功能，全部账户数据。</span>
                                 </div>
                                 <div>
                                   <span className="font-medium">成员：</span>
@@ -268,7 +322,7 @@ export function MemberManagement() {
                       </TooltipProvider>
                     </div>
                   </TableHead>
-                  <TableHead>账户数</TableHead>
+                  <TableHead>已授权资产</TableHead>
                   <TableHead>加入时间</TableHead>
                   <TableHead className="text-right">操作</TableHead>
                 </TableRow>
@@ -279,6 +333,24 @@ export function MemberManagement() {
                   const canRemove = canRemoveMember(CURRENT_USER_ROLE, member.role);
                   const canTransfer = canTransferOwner(CURRENT_USER_ROLE) && member.role === 'Owner';
 
+                  // 根据角色显示已授权资产
+                  const getAuthorizedAssets = () => {
+                    if (member.role === 'Owner' || member.role === 'Admin' || member.role === 'Finance') {
+                      return '全部账户';
+                    }
+                    // Member 角色显示具体账户名称
+                    if (member.assets && member.assets.length > 0) {
+                      const accountNames = member.assets
+                        .map(assetId => {
+                          const account = mockAccounts.find(acc => acc.id === assetId);
+                          return account ? account.name : `账户 ${assetId}`;
+                        })
+                        .join('、');
+                      return accountNames;
+                    }
+                    return '无';
+                  };
+
                   return (
                     <TableRow key={member.id}>
                       <TableCell className="text-foreground">{member.name}</TableCell>
@@ -288,7 +360,7 @@ export function MemberManagement() {
                           {getRoleDisplayName(member.role)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{member.accountCount}</TableCell>
+                      <TableCell className="text-muted-foreground">{getAuthorizedAssets()}</TableCell>
                       <TableCell className="text-muted-foreground">
                         {new Date(member.joinedAt).toLocaleDateString('zh-CN')}
                       </TableCell>
@@ -339,6 +411,7 @@ export function MemberManagement() {
             invitations={pendingInvitations}
             onRevoke={handleRevokeInvitation}
             onResend={handleResendInvitation}
+            onEdit={handleEditInvitation}
           />
         </TabsContent>
       </Tabs>
@@ -370,6 +443,13 @@ export function MemberManagement() {
         member={removeMember}
         onRemove={handleRemove}
         currentUserRole={CURRENT_USER_ROLE}
+      />
+
+      <EditInvitationDialog
+        open={!!editInvitation}
+        onOpenChange={(open) => !open && setEditInvitation(null)}
+        invitation={editInvitation}
+        onUpdate={handleUpdateInvitation}
       />
     </div>
   );

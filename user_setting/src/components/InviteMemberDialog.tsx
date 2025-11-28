@@ -3,7 +3,6 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -21,16 +20,8 @@ import {
 } from './ui/select';
 import { Checkbox } from './ui/checkbox';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Copy, X, Info, Search } from 'lucide-react';
+import { X, Info, Search } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from './ui/table';
 import { Switch } from './ui/switch';
 import {
   Tooltip,
@@ -53,11 +44,11 @@ const mockAccounts = [
   { id: '4', name: '广告账户 D - Twitter' },
 ];
 
-interface InviteResult {
+interface InviteData {
   identifier: string;
   role: string;
   token: string;
-  link: string;
+  expiresAt: string;
 }
 
 // 判断输入是邮箱还是手机号
@@ -77,11 +68,10 @@ export function InviteMemberDialog({ open, onOpenChange, onInvite }: InviteMembe
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [autoGrantSelfCreatedAccounts, setAutoGrantSelfCreatedAccounts] = useState(false);
   const [message, setMessage] = useState('');
-  const [inviteResults, setInviteResults] = useState<InviteResult[]>([]);
-  const [showResults, setShowResults] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'id' | 'name'>('name');
   const [allocationMode, setAllocationMode] = useState<'all' | 'partial'>('partial');
+  const [isSending, setIsSending] = useState(false);
 
   // 解析输入的账号列表
   const parseIdentifiers = (input: string): string[] => {
@@ -107,14 +97,17 @@ export function InviteMemberDialog({ open, onOpenChange, onInvite }: InviteMembe
     return { valid, invalid };
   };
 
-  const handleGenerateInvite = () => {
+  // 判断角色是否需要选择账户分配
+  const needsAccountSelection = role === 'Member';
+
+  const handleSendInvite = async () => {
     if (!identifiers.trim()) {
       toast.error('请输入手机号或邮箱');
       return;
     }
 
-    // 验证资产配置（如果未开启自动拥有自己申请开户账户权限，且不是分配全部账户，则必须至少选择一个账户）
-    if (role !== 'Finance' && role !== 'Owner' && allocationMode === 'partial' && selectedAccounts.length === 0 && !autoGrantSelfCreatedAccounts) {
+    // 只有成员角色才需要验证账户配置
+    if (needsAccountSelection && allocationMode === 'partial' && selectedAccounts.length === 0 && !autoGrantSelfCreatedAccounts) {
       toast.error('请至少选择一个广告账户，或选择"分配全部账户"，或开启自动拥有自己申请开户的账户权限');
       return;
     }
@@ -138,63 +131,63 @@ export function InviteMemberDialog({ open, onOpenChange, onInvite }: InviteMembe
       return;
     }
 
-    // 生成邀请链接
-    const results: InviteResult[] = valid.map(identifier => {
-      const token = `invite_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const link = `${window.location.origin}/invite?token=${token}`;
-      return {
-        identifier,
+    setIsSending(true);
+
+    try {
+      // 为每个被邀请者生成7天有效期的唯一邀请链接
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7天后
+
+      const inviteData: InviteData[] = valid.map(identifier => {
+        const token = `invite_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        return {
+          identifier,
+          role,
+          token,
+          expiresAt: expiresAt.toISOString()
+        };
+      });
+
+      // 模拟发送邀请链接（通过短信或邮件）
+      // 实际实现中，这里应该调用后端API发送
+      for (const invite of inviteData) {
+        if (isEmail(invite.identifier)) {
+          // 发送邮件
+          console.log(`发送邮件邀请到: ${invite.identifier}`);
+        } else if (isPhone(invite.identifier)) {
+          // 发送短信
+          console.log(`发送短信邀请到: ${invite.identifier}`);
+        }
+      }
+
+      // 通知父组件邀请已发送
+      onInvite({
+        invitations: inviteData,
         role,
-        token,
-        link
-      };
-    });
+        accounts: needsAccountSelection ? (allocationMode === 'all' ? 'all' : selectedAccounts) : 'all',
+        allocationMode: needsAccountSelection ? allocationMode : 'all',
+        autoGrantSelfCreatedAccounts: needsAccountSelection ? autoGrantSelfCreatedAccounts : false,
+        message,
+      });
 
-    setInviteResults(results);
-    setShowResults(true);
-  };
-
-  const handleCopyLink = (link: string, identifier: string) => {
-    navigator.clipboard.writeText(link);
-    toast.success(`已复制 ${identifier} 的邀请链接`);
-  };
-
-  const handleCopyAll = () => {
-    const links = inviteResults
-      .map(result => `${result.identifier}: ${result.link}`)
-      .join('\n');
-    navigator.clipboard.writeText(links);
-    toast.success('已复制所有邀请链接');
-  };
-
-  const handleFinish = () => {
-    // 通知父组件邀请已生成
-    onInvite({
-      results: inviteResults,
-      role,
-      accounts: allocationMode === 'all' ? 'all' : selectedAccounts,
-      allocationMode,
-      autoGrantSelfCreatedAccounts,
-      message,
-    });
-
-    // 重置表单
-    setIdentifiers('');
-    setRole('Member');
-    setSelectedAccounts([]);
-    setAutoGrantSelfCreatedAccounts(false);
-    setAllocationMode('partial');
-    setMessage('');
-    setInviteResults([]);
-    setShowResults(false);
-    setSearchQuery('');
-    setSearchMode('name');
-    onOpenChange(false);
-  };
-
-  const handleBack = () => {
-    setShowResults(false);
-    setInviteResults([]);
+      toast.success(`已成功发送 ${valid.length} 条邀请链接`);
+      
+      // 重置表单
+      setIdentifiers('');
+      setRole('Member');
+      setSelectedAccounts([]);
+      setAutoGrantSelfCreatedAccounts(false);
+      setAllocationMode('partial');
+      setMessage('');
+      setSearchQuery('');
+      setSearchMode('name');
+      onOpenChange(false);
+    } catch (error) {
+      toast.error('发送邀请失败，请重试');
+      console.error('发送邀请失败:', error);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const toggleAccount = (accountId: string) => {
@@ -267,10 +260,9 @@ export function InviteMemberDialog({ open, onOpenChange, onInvite }: InviteMembe
         setAutoGrantSelfCreatedAccounts(false);
         setAllocationMode('partial');
         setMessage('');
-        setInviteResults([]);
-        setShowResults(false);
         setSearchQuery('');
         setSearchMode('name');
+        setIsSending(false);
       }
       onOpenChange(open);
     }}>
@@ -282,9 +274,7 @@ export function InviteMemberDialog({ open, onOpenChange, onInvite }: InviteMembe
           </DialogDescription>
         </DialogHeader>
 
-        {!showResults ? (
-          <>
-            <div className="overflow-y-auto flex flex-col py-4" style={{ maxHeight: 'calc(90vh - 14rem)' }}>
+        <div className="overflow-y-auto flex flex-col py-4" style={{ maxHeight: 'calc(90vh - 14rem)' }}>
               <div className="flex flex-col lg:flex-row gap-6">
                 {/* 左侧：基本信息表单 */}
                 <div className="w-full lg:w-[40%] flex-shrink-0 space-y-4 overflow-y-auto lg:pr-4">
@@ -321,10 +311,12 @@ export function InviteMemberDialog({ open, onOpenChange, onInvite }: InviteMembe
                   </div>
 
 
-                  {role === 'Finance' && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                      <p className="text-amber-900 text-sm">
-                        财务角色不需要分配广告账户访问权限，仅可访问财务相关功能
+                  {(role === 'Admin' || role === 'Finance') && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-blue-900 text-sm">
+                        {role === 'Finance' 
+                          ? '财务角色拥有全部账户数据访问权限，无需分配账户'
+                          : '管理员角色拥有全部账户访问权限，无需分配账户'}
                       </p>
                     </div>
                   )}
@@ -334,8 +326,8 @@ export function InviteMemberDialog({ open, onOpenChange, onInvite }: InviteMembe
                   </div>
                 </div>
 
-                {/* 右侧：配置资产区域 */}
-                {role !== 'Finance' && (
+                {/* 右侧：配置资产区域 - 只有成员角色需要选择账户分配 */}
+                {needsAccountSelection && (
                   <div className="flex-1 flex flex-col min-w-0 lg:border-l lg:border-border lg:pl-6 lg:pt-0 pt-6 border-t lg:border-t-0">
                     <div className="space-y-4 h-full flex flex-col">
                       <div className="space-y-2">
@@ -570,116 +562,14 @@ export function InviteMemberDialog({ open, onOpenChange, onInvite }: InviteMembe
               </div>
             </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                取消
-              </Button>
-              <Button onClick={handleGenerateInvite}>生成邀请链接</Button>
-            </DialogFooter>
-          </>
-        ) : (
-          <>
-            <div className="space-y-4 py-4">
-              {inviteResults.length === 1 ? (
-                // 单人邀请场景
-                <div className="space-y-4">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p className="text-green-900 text-sm font-medium mb-2">邀请链接已生成</p>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-foreground">受邀账号：</span>
-                        <Badge variant="outline">{inviteResults[0].identifier}</Badge>
-                        <Badge variant="outline">{getRoleDisplayName(inviteResults[0].role as UserRole)}</Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={inviteResults[0].link}
-                          readOnly
-                          className="flex-1 font-mono text-sm"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCopyLink(inviteResults[0].link, inviteResults[0].identifier)}
-                        >
-                          <Copy className="w-4 h-4 mr-2" />
-                          复制链接
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                // 多人批量邀请场景
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-foreground font-medium">
-                      已生成 {inviteResults.length} 条邀请链接
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCopyAll}
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      一键复制全部
-                    </Button>
-                  </div>
-                  <div className="border border-border rounded-lg overflow-hidden">
-                    <div className="max-h-96 overflow-y-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/50">
-                            <TableHead>受邀账号</TableHead>
-                            <TableHead>预设角色</TableHead>
-                            <TableHead>邀请链接</TableHead>
-                            <TableHead className="text-right">操作</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {inviteResults.map((result, index) => (
-                            <TableRow key={index}>
-                              <TableCell className="text-sm text-foreground">{result.identifier}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">
-                                  {getRoleDisplayName(result.role as UserRole)}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Input
-                                  value={result.link}
-                                  readOnly
-                                  className="font-mono text-xs"
-                                />
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleCopyLink(result.link, result.identifier)}
-                                  className="h-8"
-                                >
-                                  <Copy className="w-4 h-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={handleBack}>
-                返回修改
-              </Button>
-              <Button onClick={handleFinish}>完成</Button>
-            </DialogFooter>
-          </>
-        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSending}>
+            取消
+          </Button>
+          <Button onClick={handleSendInvite} disabled={isSending}>
+            {isSending ? '发送中...' : '发送邀请链接'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
