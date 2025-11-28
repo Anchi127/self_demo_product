@@ -8,13 +8,15 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Mail, Phone } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 interface RegisterPageProps {
   onRegisterSuccess: () => void;
   onBackToLogin: () => void;
 }
 
-type RegisterStep = 'select' | 'email' | 'phone' | 'social';
+type RegisterStep = 'select' | 'email' | 'phone' | 'social' | 'social-complete';
+type SocialProvider = 'Meta' | 'Google' | 'TikTok';
 
 // 判断输入是邮箱还是手机号
 const isEmail = (value: string): boolean => {
@@ -53,11 +55,20 @@ export function RegisterPage({ onRegisterSuccess, onBackToLogin }: RegisterPageP
   const [position, setPosition] = useState('');
   const [otherContact, setOtherContact] = useState('');
   
+  // 第三方注册相关状态
+  const [socialProvider, setSocialProvider] = useState<SocialProvider | null>(null);
+  const [socialContact, setSocialContact] = useState(''); // 合并的手机号或邮箱
+  const [socialVerificationCode, setSocialVerificationCode] = useState('');
+  const [socialCodeCountdown, setSocialCodeCountdown] = useState(0);
+  const [socialName, setSocialName] = useState('');
+  const [socialCompany, setSocialCompany] = useState('');
+
   const emailInputRef = React.useRef<HTMLInputElement>(null);
   const phoneInputRef = React.useRef<HTMLInputElement>(null);
   const invitationCodeInputRef = React.useRef<HTMLInputElement>(null);
+  const socialContactInputRef = React.useRef<HTMLInputElement>(null);
 
-  // 发送验证码
+  // 发送验证码（手机号注册）
   const handleSendCode = () => {
     if (!phone.trim()) {
       if (phoneInputRef.current) {
@@ -83,6 +94,50 @@ export function RegisterPage({ onRegisterSuccess, onBackToLogin }: RegisterPageP
     setCodeCountdown(60);
     const timer = setInterval(() => {
       setCodeCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // 发送验证码（第三方注册补充信息）
+  const handleSendSocialCode = () => {
+    if (!socialContact.trim()) {
+      if (socialContactInputRef.current) {
+        socialContactInputRef.current.setCustomValidity('请输入手机号或邮箱');
+        socialContactInputRef.current.reportValidity();
+      }
+      return;
+    }
+    
+    const contactValue = socialContact.trim();
+    const isPhoneNumber = isPhone(contactValue);
+    const isEmailAddress = isEmail(contactValue);
+    
+    if (!isPhoneNumber && !isEmailAddress) {
+      if (socialContactInputRef.current) {
+        socialContactInputRef.current.setCustomValidity('请输入有效的手机号或邮箱地址');
+        socialContactInputRef.current.reportValidity();
+      }
+      return;
+    }
+    
+    // 模拟发送验证码
+    if (isPhoneNumber) {
+      console.log('发送短信验证码到:', contactValue);
+    } else {
+      console.log('发送邮箱验证码到:', contactValue);
+    }
+    
+    // 实际项目中这里应该调用发送验证码API
+    
+    // 开始倒计时
+    setSocialCodeCountdown(60);
+    const timer = setInterval(() => {
+      setSocialCodeCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
           return 0;
@@ -254,9 +309,10 @@ export function RegisterPage({ onRegisterSuccess, onBackToLogin }: RegisterPageP
   const handleSocialRegister = (provider: string) => {
     console.log(`${provider} 注册`);
     // 实际项目中这里应该调用第三方授权API
-    // 如果第三方授权成功，直接调用 onRegisterSuccess()
-    // 这里暂时模拟成功
-    onRegisterSuccess();
+    // 模拟第三方授权流程
+    // 授权成功后，保存提供商信息并跳转到信息补充页面
+    setSocialProvider(provider as SocialProvider);
+    setStep('social-complete');
   };
 
   // 渲染选择注册方式页面
@@ -748,12 +804,180 @@ export function RegisterPage({ onRegisterSuccess, onBackToLogin }: RegisterPageP
     </>
   );
 
+  // 第三方注册信息补充表单提交
+  const handleSocialComplete = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // 验证联系方式
+    if (!socialContact.trim()) {
+      if (socialContactInputRef.current) {
+        socialContactInputRef.current.setCustomValidity('请输入手机号或邮箱');
+        socialContactInputRef.current.reportValidity();
+      }
+      return;
+    }
+    
+    const contactValue = socialContact.trim();
+    const isPhoneNumber = isPhone(contactValue);
+    const isEmailAddress = isEmail(contactValue);
+    
+    if (!isPhoneNumber && !isEmailAddress) {
+      if (socialContactInputRef.current) {
+        socialContactInputRef.current.setCustomValidity('请输入有效的手机号或邮箱地址');
+        socialContactInputRef.current.reportValidity();
+      }
+      return;
+    }
+
+    // 验证验证码
+    if (!socialVerificationCode.trim()) {
+      alert(isPhoneNumber ? '请输入短信验证码' : '请输入邮箱验证码');
+      return;
+    }
+
+    // 验证姓名
+    if (!socialName.trim()) {
+      alert('请输入姓名');
+      return;
+    }
+
+    // 验证企业名称
+    if (!socialCompany.trim()) {
+      alert('请输入企业名称');
+      return;
+    }
+
+    // 模拟注册成功
+    console.log('第三方注册信息:', {
+      provider: socialProvider,
+      contactType: isPhoneNumber ? 'phone' : 'email',
+      contact: contactValue,
+      verificationCode: socialVerificationCode,
+      name: socialName,
+      company: socialCompany,
+    });
+    
+    onRegisterSuccess();
+  };
+
+  // 渲染第三方注册信息补充表单
+  const renderSocialCompleteForm = () => (
+    <>
+      <h2 className="text-3xl font-bold text-center text-foreground mb-2">
+        补充信息
+      </h2>
+      <p className="text-sm text-center text-muted-foreground mb-8">
+        {socialProvider} 授权成功，请补充以下信息完成注册
+      </p>
+
+      <form onSubmit={handleSocialComplete} className="space-y-4" noValidate>
+        {/* 联系方式输入 */}
+        <div className="space-y-2">
+          <Label htmlFor="social-contact">手机号或邮箱</Label>
+          <div className="relative">
+            {(() => {
+              const contactValue = socialContact.trim();
+              const isPhoneNumber = contactValue && isPhone(contactValue);
+              const isEmailAddress = contactValue && isEmail(contactValue);
+              // 如果还没有输入或格式不正确，默认显示邮箱图标；如果识别为手机号，显示手机图标
+              return isPhoneNumber ? (
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              ) : (
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              );
+            })()}
+            <Input
+              id="social-contact"
+              ref={socialContactInputRef}
+              type="text"
+              placeholder="请输入手机号或邮箱"
+              value={socialContact}
+              onChange={(e) => {
+                setSocialContact(e.target.value);
+                if (socialContactInputRef.current) {
+                  socialContactInputRef.current.setCustomValidity('');
+                }
+              }}
+              className="w-full pl-10"
+              required
+            />
+          </div>
+        </div>
+
+        {/* 验证码 */}
+        <div className="space-y-2">
+          <Label htmlFor="social-verification-code">
+            {(() => {
+              const contactValue = socialContact.trim();
+              const isPhoneNumber = contactValue && isPhone(contactValue);
+              return isPhoneNumber ? '短信验证码' : '验证码';
+            })()}
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="social-verification-code"
+              type="text"
+              placeholder="请输入验证码"
+              value={socialVerificationCode}
+              onChange={(e) => setSocialVerificationCode(e.target.value)}
+              className="flex-1"
+              required
+              maxLength={6}
+            />
+            <Button
+              type="button"
+              onClick={handleSendSocialCode}
+              disabled={socialCodeCountdown > 0}
+              variant="outline"
+              className="whitespace-nowrap"
+            >
+              {socialCodeCountdown > 0 ? `${socialCodeCountdown}秒后重试` : '发送验证码'}
+            </Button>
+          </div>
+        </div>
+
+        {/* 姓名 */}
+        <div className="space-y-2">
+          <Label htmlFor="social-name">姓名</Label>
+          <Input
+            id="social-name"
+            type="text"
+            placeholder="请输入您的姓名"
+            value={socialName}
+            onChange={(e) => setSocialName(e.target.value)}
+            className="w-full"
+            required
+          />
+        </div>
+
+        {/* 企业名称 */}
+        <div className="space-y-2">
+          <Label htmlFor="social-company">企业名称</Label>
+          <Input
+            id="social-company"
+            type="text"
+            placeholder="请输入企业名称"
+            value={socialCompany}
+            onChange={(e) => setSocialCompany(e.target.value)}
+            className="w-full"
+            required
+          />
+        </div>
+
+        <Button type="submit" className="w-full">
+          完成注册
+        </Button>
+      </form>
+    </>
+  );
+
   return (
     <div className="h-screen w-full flex items-center justify-center bg-background py-8">
       <div className="w-full max-w-md mx-auto bg-card border border-border rounded-lg shadow-lg p-8 max-h-[90vh] overflow-y-auto">
         {step === 'select' && renderSelectStep()}
         {step === 'email' && renderEmailForm()}
         {step === 'phone' && renderPhoneForm()}
+        {step === 'social-complete' && renderSocialCompleteForm()}
       </div>
     </div>
   );

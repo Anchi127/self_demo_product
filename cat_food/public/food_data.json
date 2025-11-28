@@ -1,0 +1,15 @@
+{
+    "dry_food": [
+      { "brand": "皇家 (Royal Canin) - 室内成猫粮", "kcal_per_100g": 387 },
+      { "brand": "渴望 (Orijen) - 原始猫粮", "kcal_per_100g": 406 },
+      { "brand": "爱肯拿 (Acana) - 草原盛宴猫粮", "kcal_per_100g": 393 },
+      { "brand": "GO! - 无谷四种肉成猫粮", "kcal_per_100g": 429 }
+    ],
+    "wet_food": [
+      { "brand": "巅峰 (Ziwi Peak) - 牛肉配方主食罐", "kcal_per_100g": 130 },
+      { "brand": "K9 Natural - 鸡肉盛宴主食罐", "kcal_per_100g": 122 },
+      { "brand": "小李子 (Leonardo) - 纯肉主食罐", "kcal_per_100g": 110 },
+      { "brand": "百利 (Instinct) - 无谷鸡肉主食罐", "kcal_per_100g": 98 }
+    ]
+  }
+  
