@@ -382,7 +382,7 @@ export function EditInvitationDialog({ open, onOpenChange, invitation, onUpdate 
                   {allocationMode === 'all' ? (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                       <p className="text-green-900 text-sm">
-                        ✓ 将分配项目内所有现有和未来的账户
+                        ℹ 将分配项目内所有现有和未来的账户
                       </p>
                     </div>
                   ) : (
@@ -458,20 +458,28 @@ export function EditInvitationDialog({ open, onOpenChange, invitation, onUpdate 
                               htmlFor="select-all-filtered-edit"
                               className="text-sm text-foreground cursor-pointer"
                             >
-                              全选当前筛选结果 ({filteredAccounts.length})
+                              全选
                             </label>
+                            <span className="text-sm text-muted-foreground">
+                              筛选结果：{filteredAccounts.length}
+                            </span>
                           </div>
-                          {selectedAccounts.length > 0 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={handleClearAll}
-                              className="h-8 text-xs"
-                            >
-                              清除所有选择
-                            </Button>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">
+                              已选择：{selectedAccounts.length}
+                            </span>
+                            {selectedAccounts.length > 0 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleClearAll}
+                                className="h-8 text-xs"
+                              >
+                                清除所有选择
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       )}
 
@@ -499,23 +507,6 @@ export function EditInvitationDialog({ open, onOpenChange, invitation, onUpdate 
                                 </label>
                               </div>
                             ))
-                          )}
-                        </div>
-                        <div className="border-t border-border p-3 flex items-center justify-between text-sm bg-background">
-                          <p className="text-muted-foreground">
-                            已选择 {selectedAccounts.length} 个账户
-                            {filteredAccounts.length !== mockAccounts.length && searchQuery && (
-                              <span className="ml-2">（当前筛选：{filteredAccounts.length}/{mockAccounts.length}）</span>
-                            )}
-                          </p>
-                          {searchQuery ? (
-                            <p className="text-muted-foreground">
-                              找到 {filteredAccounts.length} 个结果（共 {mockAccounts.length} 个账户）
-                            </p>
-                          ) : (
-                            <p className="text-muted-foreground">
-                              共 {mockAccounts.length} 个账户
-                            </p>
                           )}
                         </div>
                       </div>

@@ -40,7 +40,9 @@ interface Member {
   role: 'Owner' | 'Admin' | 'Finance' | 'Member';
   accountCount: number | string;
   joinedAt: string; // 加入时间
-  assets?: string[]; // 已分配的资产ID列表
+  assets?: string[]; // 已分配的资产ID列表（账户）
+  authorizedAccounts?: string[]; // 已分配的授权账户ID列表
+  creatives?: string[]; // 已分配的创意ID列表
   autoGrantSelfCreatedAccounts?: boolean; // 是否自动拥有自己申请开户的账户权限
 }
 
@@ -174,8 +176,10 @@ export function MemberManagement() {
           ? { 
               ...m, 
               role: data.role, 
-              accountCount: data.role === 'Finance' ? 0 : (data.accounts?.length || 0),
-              assets: data.accounts || [],
+              accountCount: data.role === 'Finance' ? 0 : (Array.isArray(data.accounts) ? data.accounts.length : (data.accounts === 'all' ? '全部账户' : 0)),
+              assets: Array.isArray(data.accounts) ? data.accounts : (data.accounts === 'all' ? [] : []),
+              authorizedAccounts: Array.isArray(data.authorizedAccounts) ? data.authorizedAccounts : (data.authorizedAccounts === 'all' ? [] : []),
+              creatives: Array.isArray(data.creatives) ? data.creatives : (data.creatives === 'all' ? [] : []),
               autoGrantSelfCreatedAccounts: data.autoGrantSelfCreatedAccounts ?? false
             }
           : m
@@ -333,22 +337,16 @@ export function MemberManagement() {
                   const canRemove = canRemoveMember(CURRENT_USER_ROLE, member.role);
                   const canTransfer = canTransferOwner(CURRENT_USER_ROLE) && member.role === 'Owner';
 
-                  // 根据角色显示已授权资产
+                  // 根据角色显示已授权资产（资产类型+数量格式）
                   const getAuthorizedAssets = () => {
                     if (member.role === 'Owner' || member.role === 'Admin' || member.role === 'Finance') {
-                      return '全部账户';
+                      return '账户：全部 | 授权账户：全部 | 创意：全部';
                     }
-                    // Member 角色显示具体账户名称
-                    if (member.assets && member.assets.length > 0) {
-                      const accountNames = member.assets
-                        .map(assetId => {
-                          const account = mockAccounts.find(acc => acc.id === assetId);
-                          return account ? account.name : `账户 ${assetId}`;
-                        })
-                        .join('、');
-                      return accountNames;
-                    }
-                    return '无';
+                    // Member 角色显示三项资产数量
+                    const accountsCount = member.assets && member.assets.length > 0 ? member.assets.length : 0;
+                    const authorizedAccountsCount = member.authorizedAccounts && member.authorizedAccounts.length > 0 ? member.authorizedAccounts.length : 0;
+                    const creativesCount = member.creatives && member.creatives.length > 0 ? member.creatives.length : 0;
+                    return `账户：${accountsCount} | 授权账户：${authorizedAccountsCount} | 创意：${creativesCount}`;
                   };
 
                   return (

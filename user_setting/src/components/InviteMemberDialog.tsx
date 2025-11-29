@@ -20,6 +20,7 @@ import {
 } from './ui/select';
 import { Checkbox } from './ui/checkbox';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { X, Info, Search } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 import { Switch } from './ui/switch';
@@ -66,12 +67,15 @@ export function InviteMemberDialog({ open, onOpenChange, onInvite }: InviteMembe
   const [identifiers, setIdentifiers] = useState<string>(''); // 批量输入，支持换行或逗号分隔
   const [role, setRole] = useState('Member');
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+  const [selectedAuthorizedAccounts, setSelectedAuthorizedAccounts] = useState<string[]>([]);
+  const [selectedCreatives, setSelectedCreatives] = useState<string[]>([]);
   const [autoGrantSelfCreatedAccounts, setAutoGrantSelfCreatedAccounts] = useState(false);
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'id' | 'name'>('name');
   const [allocationMode, setAllocationMode] = useState<'all' | 'partial'>('partial');
   const [isSending, setIsSending] = useState(false);
+  const [activeAssetTab, setActiveAssetTab] = useState<'accounts' | 'authorizedAccounts' | 'creatives'>('accounts');
 
   // 解析输入的账号列表
   const parseIdentifiers = (input: string): string[] => {
@@ -165,6 +169,8 @@ export function InviteMemberDialog({ open, onOpenChange, onInvite }: InviteMembe
         invitations: inviteData,
         role,
         accounts: needsAccountSelection ? (allocationMode === 'all' ? 'all' : selectedAccounts) : 'all',
+        authorizedAccounts: needsAccountSelection ? (selectedAuthorizedAccounts.length > 0 ? selectedAuthorizedAccounts : 'all') : 'all',
+        creatives: needsAccountSelection ? (selectedCreatives.length > 0 ? selectedCreatives : 'all') : 'all',
         allocationMode: needsAccountSelection ? allocationMode : 'all',
         autoGrantSelfCreatedAccounts: needsAccountSelection ? autoGrantSelfCreatedAccounts : false,
         message,
@@ -176,11 +182,14 @@ export function InviteMemberDialog({ open, onOpenChange, onInvite }: InviteMembe
       setIdentifiers('');
       setRole('Member');
       setSelectedAccounts([]);
+      setSelectedAuthorizedAccounts([]);
+      setSelectedCreatives([]);
       setAutoGrantSelfCreatedAccounts(false);
       setAllocationMode('partial');
       setMessage('');
       setSearchQuery('');
       setSearchMode('name');
+      setActiveAssetTab('accounts');
       onOpenChange(false);
     } catch (error) {
       toast.error('发送邀请失败，请重试');
@@ -257,11 +266,14 @@ export function InviteMemberDialog({ open, onOpenChange, onInvite }: InviteMembe
         setIdentifiers('');
         setRole('Member');
         setSelectedAccounts([]);
+        setSelectedAuthorizedAccounts([]);
+        setSelectedCreatives([]);
         setAutoGrantSelfCreatedAccounts(false);
         setAllocationMode('partial');
         setMessage('');
         setSearchQuery('');
         setSearchMode('name');
+        setActiveAssetTab('accounts');
         setIsSending(false);
       }
       onOpenChange(open);
@@ -333,229 +345,245 @@ export function InviteMemberDialog({ open, onOpenChange, onInvite }: InviteMembe
                       <div className="space-y-2">
                         <Label>配置资产（选填）</Label>
                         
-                        {/* 分配模式选择 */}
-                        <RadioGroup
-                          value={allocationMode}
-                          onValueChange={(value) => {
-                            const mode = value as 'all' | 'partial';
-                            setAllocationMode(mode);
-                            if (mode === 'all') {
-                              setSelectedAccounts([]);
-                            }
-                          }}
-                          className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-                        >
-                          <div>
-                            <RadioGroupItem
-                              value="all"
-                              id="allocation-all"
-                              className="peer sr-only"
-                            />
-                            <label
-                              htmlFor="allocation-all"
-                              className={cn(
-                                "flex items-start gap-3 p-4 rounded-lg border-2 transition-all cursor-pointer",
-                                allocationMode === 'all'
-                                  ? "border-primary bg-primary/5"
-                                  : "border-border hover:border-primary/50 peer-focus-visible:ring-2 peer-focus-visible:ring-ring"
-                              )}
+                        <Tabs value={activeAssetTab} onValueChange={(value) => setActiveAssetTab(value as 'accounts' | 'authorizedAccounts' | 'creatives')} className="w-full">
+                          <TabsList className="w-full">
+                            <TabsTrigger value="accounts" className="flex-1">账户</TabsTrigger>
+                            <TabsTrigger value="authorizedAccounts" className="flex-1">授权账户</TabsTrigger>
+                            <TabsTrigger value="creatives" className="flex-1">创意</TabsTrigger>
+                          </TabsList>
+
+                          {/* 账户标签页 */}
+                          <TabsContent value="accounts" className="space-y-4 mt-4">
+                            {/* 分配模式选择 */}
+                            <RadioGroup
+                              value={allocationMode}
+                              onValueChange={(value) => {
+                                const mode = value as 'all' | 'partial';
+                                setAllocationMode(mode);
+                                if (mode === 'all') {
+                                  setSelectedAccounts([]);
+                                }
+                              }}
+                              className="grid grid-cols-1 sm:grid-cols-2 gap-3"
                             >
-                              <div className={cn(
-                                "mt-0.5 size-4 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors",
-                                allocationMode === 'all'
-                                  ? "border-primary"
-                                  : "border-muted-foreground"
-                              )}>
-                                {allocationMode === 'all' && (
-                                  <div className="size-2 rounded-full bg-primary" />
-                                )}
-                              </div>
-                              <div className="flex-1">
-                                <div className="font-medium text-sm mb-1">分配全部账户</div>
-                                <p className="text-xs text-muted-foreground">
-                                  分配项目内所有现有和未来的账户
-                                </p>
-                              </div>
-                            </label>
-                          </div>
-                          <div>
-                            <RadioGroupItem
-                              value="partial"
-                              id="allocation-partial"
-                              className="peer sr-only"
-                            />
-                            <label
-                              htmlFor="allocation-partial"
-                              className={cn(
-                                "flex items-start gap-3 p-4 rounded-lg border-2 transition-all cursor-pointer",
-                                allocationMode === 'partial'
-                                  ? "border-primary bg-primary/5"
-                                  : "border-border hover:border-primary/50 peer-focus-visible:ring-2 peer-focus-visible:ring-ring"
-                              )}
-                            >
-                              <div className={cn(
-                                "mt-0.5 size-4 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors",
-                                allocationMode === 'partial'
-                                  ? "border-primary"
-                                  : "border-muted-foreground"
-                              )}>
-                                {allocationMode === 'partial' && (
-                                  <div className="size-2 rounded-full bg-primary" />
-                                )}
-                              </div>
-                              <div className="flex-1">
-                                <div className="font-medium text-sm mb-1">分配部分账户</div>
-                                <p className="text-xs text-muted-foreground">
-                                  选择特定账户进行分配
-                                </p>
-                              </div>
-                            </label>
-                          </div>
-                        </RadioGroup>
-                      </div>
-
-                      {allocationMode === 'all' ? (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                          <p className="text-green-900 text-sm">
-                            ✓ 将分配项目内所有现有和未来的账户
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="flex-1 flex flex-col min-h-0 space-y-3">
-                          {/* 自动拥有自己申请开户账户权限开关 */}
-                          <div className="flex items-start justify-between p-4 bg-muted/30 rounded-lg border border-border">
-                            <div className="flex-1 space-y-1">
-                              <div className="flex items-center gap-2">
-                                <Label htmlFor="invite-auto-grant" className="text-sm font-medium cursor-pointer">
-                                  自动拥有自己申请开户的账户权限
-                                </Label>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Info className="w-4 h-4 text-muted-foreground cursor-help" />
-                                  </TooltipTrigger>
-                                  <TooltipContent className="max-w-xs">
-                                    <p>开启后，该用户申请开户时获得的账户将自动分配权限。如果之前已有账户但未分配，开启后也会自动分配。</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                开启后，用户申请开户获得的账户将自动拥有访问权限
-                              </p>
-                            </div>
-                            <Switch
-                              id="invite-auto-grant"
-                              checked={autoGrantSelfCreatedAccounts}
-                              onCheckedChange={setAutoGrantSelfCreatedAccounts}
-                            />
-                          </div>
-
-                          {/* 搜索框和模式切换 */}
-                          <div className="flex items-center gap-2">
-                            <Select value={searchMode} onValueChange={(value) => setSearchMode(value as 'id' | 'name')}>
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="name">账户名称</SelectItem>
-                                <SelectItem value="id">账户ID</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <div className="relative flex-1">
-                              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                              <Input
-                                placeholder={searchMode === 'id' ? '搜索账户ID...' : '搜索账户名称...'}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-8 pr-8"
-                              />
-                              {searchQuery && (
-                                <button
-                                  type="button"
-                                  onClick={handleClearSearch}
-                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* 操作栏：全选和清除 */}
-                          {filteredAccounts.length > 0 && (
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  id="select-all-filtered"
-                                  checked={isAllFilteredSelected}
-                                  onCheckedChange={handleSelectAllFiltered}
+                              <div>
+                                <RadioGroupItem
+                                  value="all"
+                                  id="allocation-all"
+                                  className="peer sr-only"
                                 />
                                 <label
-                                  htmlFor="select-all-filtered"
-                                  className="text-sm text-foreground cursor-pointer"
+                                  htmlFor="allocation-all"
+                                  className={cn(
+                                    "flex items-start gap-3 p-4 rounded-lg border-2 transition-all cursor-pointer",
+                                    allocationMode === 'all'
+                                      ? "border-primary bg-primary/5"
+                                      : "border-border hover:border-primary/50 peer-focus-visible:ring-2 peer-focus-visible:ring-ring"
+                                  )}
                                 >
-                                  全选当前筛选结果 ({filteredAccounts.length})
+                                  <div className={cn(
+                                    "mt-0.5 size-4 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors",
+                                    allocationMode === 'all'
+                                      ? "border-primary"
+                                      : "border-muted-foreground"
+                                  )}>
+                                    {allocationMode === 'all' && (
+                                      <div className="size-2 rounded-full bg-primary" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-medium text-sm mb-1">分配全部账户</div>
+                                    <p className="text-xs text-muted-foreground">
+                                      分配项目内所有现有和未来的账户
+                                    </p>
+                                  </div>
                                 </label>
                               </div>
-                              {selectedAccounts.length > 0 && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={handleClearAll}
-                                  className="h-8 text-xs"
+                              <div>
+                                <RadioGroupItem
+                                  value="partial"
+                                  id="allocation-partial"
+                                  className="peer sr-only"
+                                />
+                                <label
+                                  htmlFor="allocation-partial"
+                                  className={cn(
+                                    "flex items-start gap-3 p-4 rounded-lg border-2 transition-all cursor-pointer",
+                                    allocationMode === 'partial'
+                                      ? "border-primary bg-primary/5"
+                                      : "border-border hover:border-primary/50 peer-focus-visible:ring-2 peer-focus-visible:ring-ring"
+                                  )}
                                 >
-                                  清除所有选择
-                                </Button>
-                              )}
-                            </div>
-                          )}
-
-                          {/* 账户列表 */}
-                          <div className="flex-1 border border-border rounded-lg bg-muted/30 overflow-hidden flex flex-col min-h-0">
-                            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                              {filteredAccounts.length === 0 ? (
-                                <div className="text-center text-muted-foreground text-sm py-8">
-                                  未找到匹配的账户
-                                </div>
-                              ) : (
-                                filteredAccounts.map((account) => (
-                                  <div key={account.id} className="flex items-center space-x-3">
-                                    <Checkbox
-                                      id={`account-${account.id}`}
-                                      checked={selectedAccounts.includes(account.id)}
-                                      onCheckedChange={() => toggleAccount(account.id)}
-                                    />
-                                    <label
-                                      htmlFor={`account-${account.id}`}
-                                      className="flex-1 text-foreground cursor-pointer text-sm"
-                                    >
-                                      <span className="font-medium">{account.name}</span>
-                                      <span className="text-muted-foreground ml-2">(ID: {account.id})</span>
-                                    </label>
+                                  <div className={cn(
+                                    "mt-0.5 size-4 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors",
+                                    allocationMode === 'partial'
+                                      ? "border-primary"
+                                      : "border-muted-foreground"
+                                  )}>
+                                    {allocationMode === 'partial' && (
+                                      <div className="size-2 rounded-full bg-primary" />
+                                    )}
                                   </div>
-                                ))
-                              )}
-                            </div>
-                            <div className="border-t border-border p-3 flex items-center justify-between text-sm bg-background">
-                              <p className="text-muted-foreground">
-                                已选择 {selectedAccounts.length} 个账户
-                                {filteredAccounts.length !== mockAccounts.length && searchQuery && (
-                                  <span className="ml-2">（当前筛选：{filteredAccounts.length}/{mockAccounts.length}）</span>
+                                  <div className="flex-1">
+                                    <div className="font-medium text-sm mb-1">分配部分账户</div>
+                                    <p className="text-xs text-muted-foreground">
+                                      选择特定账户进行分配
+                                    </p>
+                                  </div>
+                                </label>
+                              </div>
+                            </RadioGroup>
+
+                            {allocationMode === 'all' ? (
+                              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <p className="text-green-900 text-sm">
+                                  ℹ 将分配项目内所有现有和未来的账户
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="flex-1 flex flex-col min-h-0 space-y-3">
+                                {/* 自动拥有自己申请开户账户权限开关 */}
+                                <div className="flex items-start justify-between p-4 bg-muted/30 rounded-lg border border-border">
+                                  <div className="flex-1 space-y-1">
+                                    <div className="flex items-center gap-2">
+                                      <Label htmlFor="invite-auto-grant" className="text-sm font-medium cursor-pointer">
+                                        自动拥有自己申请开户的账户权限
+                                      </Label>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent className="max-w-xs">
+                                          <p>开启后，该用户申请开户时获得的账户将自动分配权限。如果之前已有账户但未分配，开启后也会自动分配。</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                      开启后，用户申请开户获得的账户将自动拥有访问权限
+                                    </p>
+                                  </div>
+                                  <Switch
+                                    id="invite-auto-grant"
+                                    checked={autoGrantSelfCreatedAccounts}
+                                    onCheckedChange={setAutoGrantSelfCreatedAccounts}
+                                  />
+                                </div>
+
+                                {/* 搜索框和模式切换 */}
+                                <div className="flex items-center gap-2">
+                                  <Select value={searchMode} onValueChange={(value) => setSearchMode(value as 'id' | 'name')}>
+                                    <SelectTrigger className="w-32">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="name">账户名称</SelectItem>
+                                      <SelectItem value="id">账户ID</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <div className="relative flex-1">
+                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                                    <Input
+                                      placeholder={searchMode === 'id' ? '搜索账户ID...' : '搜索账户名称...'}
+                                      value={searchQuery}
+                                      onChange={(e) => setSearchQuery(e.target.value)}
+                                      className="pl-8 pr-8"
+                                    />
+                                    {searchQuery && (
+                                      <button
+                                        type="button"
+                                        onClick={handleClearSearch}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* 操作栏：全选和清除 */}
+                                {filteredAccounts.length > 0 && (
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <Checkbox
+                                        id="select-all-filtered"
+                                        checked={isAllFilteredSelected}
+                                        onCheckedChange={handleSelectAllFiltered}
+                                      />
+                                      <label
+                                        htmlFor="select-all-filtered"
+                                        className="text-sm text-foreground cursor-pointer"
+                                      >
+                                        全选
+                                      </label>
+                                      <span className="text-sm text-muted-foreground">
+                                        筛选结果：{filteredAccounts.length}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm text-muted-foreground">
+                                        已选择：{selectedAccounts.length}
+                                      </span>
+                                      {selectedAccounts.length > 0 && (
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={handleClearAll}
+                                          className="h-8 text-xs"
+                                        >
+                                          清除所有选择
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
                                 )}
-                              </p>
-                              {searchQuery ? (
-                                <p className="text-muted-foreground">
-                                  找到 {filteredAccounts.length} 个结果（共 {mockAccounts.length} 个账户）
-                                </p>
-                              ) : (
-                                <p className="text-muted-foreground">
-                                  共 {mockAccounts.length} 个账户
-                                </p>
-                              )}
+
+                                {/* 账户列表 */}
+                                <div className="flex-1 border border-border rounded-lg bg-muted/30 overflow-hidden flex flex-col min-h-0">
+                                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                    {filteredAccounts.length === 0 ? (
+                                      <div className="text-center text-muted-foreground text-sm py-8">
+                                        未找到匹配的账户
+                                      </div>
+                                    ) : (
+                                      filteredAccounts.map((account) => (
+                                        <div key={account.id} className="flex items-center space-x-3">
+                                          <Checkbox
+                                            id={`account-${account.id}`}
+                                            checked={selectedAccounts.includes(account.id)}
+                                            onCheckedChange={() => toggleAccount(account.id)}
+                                          />
+                                          <label
+                                            htmlFor={`account-${account.id}`}
+                                            className="flex-1 text-foreground cursor-pointer text-sm"
+                                          >
+                                            <span className="font-medium">{account.name}</span>
+                                            <span className="text-muted-foreground ml-2">(ID: {account.id})</span>
+                                          </label>
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </TabsContent>
+
+                          {/* 授权账户标签页 */}
+                          <TabsContent value="authorizedAccounts" className="mt-4">
+                            <div className="flex items-center justify-center py-12 border border-border rounded-lg bg-muted/30">
+                              <p className="text-muted-foreground text-sm">授权账户配置功能开发中，敬请期待</p>
                             </div>
-                          </div>
-                        </div>
-                      )}
+                          </TabsContent>
+
+                          {/* 创意标签页 */}
+                          <TabsContent value="creatives" className="mt-4">
+                            <div className="flex items-center justify-center py-12 border border-border rounded-lg bg-muted/30">
+                              <p className="text-muted-foreground text-sm">创意配置功能开发中，敬请期待</p>
+                            </div>
+                          </TabsContent>
+                        </Tabs>
+                      </div>
                     </div>
                   </div>
                 )}
